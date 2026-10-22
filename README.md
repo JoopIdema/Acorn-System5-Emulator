@@ -28,9 +28,10 @@ Choose the model in **Machine > Model**. A Break follows automatically when you 
 **IMADOS is built from Acorn DOS with the following additions:**
 
 * BBC like Boot sound using SID
-* HELP command, shows all commands
+* All Acorn DOS Floppy based utilities built-in
+* HELP command, shows all built-in commands
 * BASIC command, starts BBC Basic
-* All Floppy based DOS utilities built-in
+
 
 **Supports the following BBC BASIC II functions:**
 
