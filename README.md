@@ -12,6 +12,7 @@ TWO MACHINE MODELS  (menu Machine > Model; a Break follows automatically when yo
 ---------------------------------------------------------------------------------------
 
 1) Custom System 5  - IMADOS 1.41, 40x25 teletext, SID
+
    RAM        &0000-&9FFF
    BASIC      &A000-&DFFF (BBC BASIC II)
    IMADOS     &E000-&FFFF
@@ -21,7 +22,7 @@ TWO MACHINE MODELS  (menu Machine > Model; a Break follows automatically when yo
    FDC        8271 at &0A00
    SID        6581 at &0C60
 
-2) Standard System 5 - AcornDOS, no SID
+3) Standard System 5 - AcornDOS, no SID
    RAM        &0000-&07FF and &2000-&BFFF
    AcornDOS   &F000-&FFFF
    VDU        choose one:
