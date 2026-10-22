@@ -23,6 +23,21 @@ Choose the model in **Machine > Model**. A Break follows automatically when you 
 | VDU | RAM `&0400-&07FF` (teletext 40x25), 6845/HD46505 CRTC at `&0800` |
 | FDC | 8271 at `&0A00` |
 | SID | 6581 at `&0C60` |
+## About IMADOS 1.41
+
+**IMADOS is built from Acorn DOS with the following additions:**
+
+* BBC like Boot sound using SID
+* HELP command, shows all commands
+* BASIC command, starts BBC Basic
+* All Floppy based DOS utilities built-in
+
+**Supports the following BBC BASIC II functions:**
+
+* VDU7 (ctrl-G) beep using SID
+* TIME (like the BBC using VIA T1 as a 100Hz IRQ routine)
+
+[IMADOS.md](https://github.com/user-attachments/files/33819301/IMADOS.md)
 
 ### 2. Standard System 5 — AcornDOS, no SID
 
