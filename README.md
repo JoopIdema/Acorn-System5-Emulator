@@ -1,2 +1,2 @@
 # Acorn-System5-Emulator
-Emulatur for the Acorn System 5
+Emulator for the Acorn System 5
