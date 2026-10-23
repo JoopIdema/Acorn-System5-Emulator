@@ -7,7 +7,7 @@ System 5, 6502, 40x25 teletext VDU (&0400, 6845 at &0800),
           
 Build  :  
 beebasm -i snake.asm            (produces SNAKE)  
-MakeSSD.cmd creates S5snake.ssd  
+MakeSSD.cmd (produces S5snake.ssd  
 
 Run    :  
 *RUN SNAKE   (load and exec address &2800)  
