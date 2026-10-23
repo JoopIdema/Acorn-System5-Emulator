@@ -1,8 +1,6 @@
 [README.md](https://github.com/user-attachments/files/33814207/README.md)
 # Acorn System 5 Emulator (Windows)
 
-**Version 1.1.0**
-
 An emulator for the Acorn System 5 (6502 based). It runs on Windows as a single program (`system5.exe`): no installation and no extra DLLs needed.
 
 For private and hobby use. The teletext font and character rounding, and the SID emulation (reSID-fp), are taken from [b-em](https://github.com/stardot/b-em) (GPL); see `source/b-em-COPYING.txt`.
