@@ -89,7 +89,7 @@ Disks are `.ssd` images (single sided, 10 sectors of 256 bytes per track, 40 or 
 
 ## What is emulated
 
-- 6502 at 1 MHz (passes the Klaus Dormann functional test, including decimal mode)
+- 6502 at 1 and 2  MHz (passes the Klaus Dormann functional test, including decimal mode)
 - 2 x 6522 VIA, 6845/HD46505 CRTC, SAA5050 teletext, 8271 floppy controller, 6581 SID (custom model only)
 - Drive motor and ready line: after about 3 seconds without disk activity the drive reports "not ready", and after a disk change the OS re-reads the catalogue.
 
