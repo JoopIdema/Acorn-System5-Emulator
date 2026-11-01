@@ -23,8 +23,10 @@
 #define ID_BASICROM 154
 #define ID_FPROM   155
 #define ID_STARTBASIC 156
+#define ID_MHZ1    157
+#define ID_MHZ2    158
 #define ID_MONO    160    /* 160..162: white, green, amber */
-#define S5_VERSION "1.1.0"
+#define S5_VERSION "1.2.0"
 #define BORDER_X_PM 65     /* black border left/right, in 1/1000 of the 4:3 frame width  */
 #define BORDER_Y_PX 25     /* black border top/bottom: pixels at a 800x600 window, scales with window size */
 #define ID_ABOUT  120
@@ -71,7 +73,7 @@ static const char*base_name(const char*p){ const char*s=strrchr(p,'\\'); if(!s) 
 static void update_title(void){
     char t[600];
     const char*mn= cfg_model==M_CUSTOM ? "Custom (IMADOS)" : (cfg_vdu ? "Standard 80x25" : "Standard 40x25");
-    snprintf(t,sizeof t,"Acorn System 5 v" S5_VERSION " - %s - D0: %s   D1: %s%s",mn,
+    snprintf(t,sizeof t,"Acorn System 5 v" S5_VERSION " - %s%s - D0: %s   D1: %s%s",mn,(cfg_model==M_STANDARD&&cfg_mhz==2)?" 2MHz":"",
         disk[0].mounted?base_name(disk[0].path):"(empty)", disk[1].mounted?base_name(disk[1].path):"(empty)",
         caps_on?"   [CAPS]":"");
     SetWindowTextA(hwnd,t);
@@ -79,7 +81,7 @@ static void update_title(void){
 /* ---- settings (system5.ini next to the exe) ---- */
 static void cfg_save(void){
     FILE*f=fopen(ini_path,"w"); if(!f) return;
-    fprintf(f,"model=%d\nvdu=%d\nbasic=%d\nfp=%d\nmono=%d\nsmooth=%d\n",cfg_model,cfg_vdu,cfg_basic,cfg_fp,cfg_mono,smooth);
+    fprintf(f,"model=%d\nvdu=%d\nbasic=%d\nfp=%d\nmono=%d\nsmooth=%d\nmhz=%d\n",cfg_model,cfg_vdu,cfg_basic,cfg_fp,cfg_mono,smooth,cfg_mhz);
     for(int i=0;i<2;i++) if(d_user[i]) fprintf(f,"d%d=%s\n",i,disk[i].mounted?disk[i].path:"");
     fclose(f);
 }
@@ -93,6 +95,7 @@ static void cfg_load(void){
         else if(!strcmp(ln,"fp")) cfg_fp=atoi(v)?1:0;
         else if(!strcmp(ln,"mono")){ cfg_mono=atoi(v); if(cfg_mono<0||cfg_mono>2) cfg_mono=0; }
         else if(!strcmp(ln,"smooth")) smooth=atoi(v)?1:0;
+        else if(!strcmp(ln,"mhz")) cfg_mhz=(atoi(v)==2)?2:1;
         else if(ln[0]=='d'&&(ln[1]=='0'||ln[1]=='1')&&!ln[2]){ int d=ln[1]-'0'; d_user[d]=1; free(ini_disk[d]); ini_disk[d]=*v?_strdup(v):NULL; }
     }
     fclose(f);
@@ -106,9 +109,11 @@ static void refresh_menu(void){
     CheckMenuRadioItem(hm_std,ID_VDU40,ID_VDU80,ID_VDU40+cfg_vdu,MF_BYCOMMAND);
     CheckMenuItem(hm_std,ID_BASICROM,MF_BYCOMMAND|(cfg_basic?MF_CHECKED:MF_UNCHECKED));
     CheckMenuItem(hm_std,ID_FPROM,MF_BYCOMMAND|(cfg_fp?MF_CHECKED:MF_UNCHECKED));
+    CheckMenuRadioItem(hm_std,ID_MHZ1,ID_MHZ2,ID_MHZ1+(cfg_mhz==2),MF_BYCOMMAND);
     UINT en=(cfg_model==M_STANDARD)?MF_ENABLED:MF_GRAYED;
     EnableMenuItem(hm_std,ID_VDU40,MF_BYCOMMAND|en); EnableMenuItem(hm_std,ID_VDU80,MF_BYCOMMAND|en);
     EnableMenuItem(hm_std,ID_BASICROM,MF_BYCOMMAND|en); EnableMenuItem(hm_std,ID_FPROM,MF_BYCOMMAND|en);
+    EnableMenuItem(hm_std,ID_MHZ1,MF_BYCOMMAND|en); EnableMenuItem(hm_std,ID_MHZ2,MF_BYCOMMAND|en);
     CheckMenuRadioItem(hm_mono,ID_MONO,ID_MONO+2,ID_MONO+cfg_mono,MF_BYCOMMAND);
     UINT em=(cfg_model==M_STANDARD&&cfg_vdu==1)?MF_ENABLED:MF_GRAYED;
     for(int i=0;i<3;i++) EnableMenuItem(hm_mono,ID_MONO+i,MF_BYCOMMAND|em);
@@ -235,6 +240,7 @@ static LRESULT CALLBACK wndproc(HWND h,UINT m,WPARAM w,LPARAM l){
         case ID_VDU80: cfg_vdu=1; apply_config(); break;
         case ID_BASICROM: cfg_basic=!cfg_basic; apply_config(); break;
         case ID_FPROM: cfg_fp=!cfg_fp; apply_config(); break;
+        case ID_MHZ1: case ID_MHZ2: cfg_mhz=(LOWORD(w)==ID_MHZ2)?2:1; refresh_menu(); update_title(); cfg_save(); break;   /* no reset needed */
         case ID_MONO: case ID_MONO+1: case ID_MONO+2: cfg_mono=LOWORD(w)-ID_MONO; refresh_menu(); cfg_save(); break;
         case ID_STARTBASIC: { const char*c= cfg_model==M_CUSTOM ? "BASIC\r" : "GO C2B2\r"; for(;*c;c++) kb_push(*c); break; }
         case ID_SIZE1: set_client_size(640,480); break; case ID_SIZE2: set_client_size(800,600); break; case ID_SIZE3: set_client_size(1280,960); break;
@@ -244,7 +250,7 @@ static LRESULT CALLBACK wndproc(HWND h,UINT m,WPARAM w,LPARAM l){
             "Two machine models (Machine > Model):\n"
             " - Custom System 5: IMADOS, 40x25 teletext, SID, BASIC &A000-&DFFF\n"
             " - Standard System 5: AcornDOS, 40x25 teletext or 80x25 mono VDU,\n"
-            "   System BASIC &C000 with optional floating point ROM &D000, no SID\n\n"
+            "   System BASIC &C000 with optional floating point ROM &D000, no SID,\n   CPU clock 1 or 2 MHz\n\n"
             "6502 @ 1 MHz, 2x 6522 VIA, 6845/HD46505, SAA5050 teletext, 8271 FDC\n\n"
             "F12 = Break     F11 = Space-Break (boot disk)     F8 = smoothing on/off\n"
             "Machine > Start BASIC types BASIC (custom) or GO C2B2 (standard)\n"
@@ -338,6 +344,9 @@ int WINAPI WinMain(HINSTANCE hi,HINSTANCE hp,LPSTR cmd,int show){
     AppendMenuA(hm_std,MF_SEPARATOR,0,NULL);
     AppendMenuA(hm_std,MF_STRING,ID_BASICROM,"System BASIC ROM at &C000");
     AppendMenuA(hm_std,MF_STRING,ID_FPROM,"Floating point ROM at &D000");
+    AppendMenuA(hm_std,MF_SEPARATOR,0,NULL);
+    AppendMenuA(hm_std,MF_STRING,ID_MHZ1,"CPU speed: 1 MHz");
+    AppendMenuA(hm_std,MF_STRING,ID_MHZ2,"CPU speed: 2 MHz (6502A)");
     AppendMenuA(mm,MF_POPUP,(UINT_PTR)hm_std,"&Standard System 5 options");
     AppendMenuA(mm,MF_SEPARATOR,0,NULL);
     AppendMenuA(mm,MF_STRING,ID_PASTE,"&Paste text\tCtrl+V");
@@ -373,7 +382,7 @@ int WINAPI WinMain(HINSTANCE hi,HINSTANCE hp,LPSTR cmd,int show){
         if(!running) break;
         QueryPerformanceCounter(&qn);
         if(qn.QuadPart>=next){
-            machine_run(20000);
+            machine_run(20000*cpu_mhz());
             audio_push(); sidn=0;
             tt_render();
             if(frame_changed){ frame_changed=0; sdirty=1; InvalidateRect(hwnd,NULL,FALSE); }

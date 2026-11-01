@@ -18,6 +18,9 @@ static int cfg_vdu=0;              /* standard model: 0 = 40x25 teletext, 1 = 80
 static int cfg_basic=1;            /* standard model: System BASIC ROM at &C000-&CFFF */
 static int cfg_fp=1;               /* standard model: floating point ROM at &D000-&DFFF */
 static int cfg_mono=0;             /* 80x25 display colour: 0 white, 1 green, 2 amber */
+static int cfg_mhz=1;              /* standard model: CPU clock 1 or 2 MHz (6502A board) */
+static i64 rtc;                    /* real-time clock in microseconds of emulated time (independent of the CPU clock) */
+static inline int cpu_mhz(void){ return cfg_model==M_STANDARD ? cfg_mhz : 1; }
 static u8 rom_dos40[0x1000],rom_dos80[0x1000],rom_sbasic[0x1000],rom_sfp[0x1000],font80[0x800];
 static i64 cyc;                 /* total CPU cycles since start */
 
@@ -184,13 +187,13 @@ static void fdc_exec(void){
     case 0x29: { int rg=f->drv?0x1A:0x12; int steps=abs(f->par[0]-f->spec[rg]); f->spec[rg]=f->par[0];
         f->delay=1500+steps*2500; f->state=ST_SEEKONLY; break; }
     case 0x2C: {
-        int run=(cyc<motor_until);
+        int run=(rtc<motor_until);
         u8 r=0x80; if(disk[0].mounted&&run) r|=0x04; if(disk[1].mounted&&run) r|=0x40;
         if(f->spec[f->drv?0x1A:0x12]==0) r|=0x08;
         f->result=r; f->status=0x10; f->state=ST_IDLE; break; }
     case 0x35: f->status=0; f->state=ST_IDLE; break;
     case 0x3A: f->spec[f->par[0]&63]=f->par[1]; f->status=0; f->state=ST_IDLE;
-        if((f->par[0]&63)==0x23 && (f->par[1]&0xC8)) motor_until=cyc+3000000;   /* select/head load starts the motor (~3 s timeout) */
+        if((f->par[0]&63)==0x23 && (f->par[1]&0xC8)) motor_until=rtc+3000000;   /* select/head load starts the motor (~3 s timeout) */
         break;
     case 0x3D: f->result=f->spec[f->par[0]&63]; f->status=0x10; f->state=ST_IDLE; break;
     default: fdc_finish(0x18); break;
@@ -237,7 +240,7 @@ static void fdc_event(void){
     }
 }
 static void fdc_tick(int n){
-    if(fdc.state!=ST_IDLE) motor_until=cyc+3000000;
+    if(fdc.state!=ST_IDLE) motor_until=rtc+3000000;
     if(fdc.delay>0){ fdc.delay-=n; if(fdc.delay<=0){ fdc.delay=0; fdc_event(); } }
 }
 static u8 fdc_read(int r){
@@ -557,7 +560,10 @@ static int cpu_step(void){
 static void machine_step(void){
     int n=cpu_step();
     cyc+=n;
-    via_tick(&via1,n); via_tick(&via2,n); fdc_tick(n); kb_tick(n);
+    static int frac; int mhz=cpu_mhz();
+    frac+=n; int rt=frac/mhz; frac-=rt*mhz; rtc+=rt;      /* microseconds of real time */
+    via_tick(&via1,n); via_tick(&via2,n);                  /* VIAs run from the CPU clock */
+    fdc_tick(rt); kb_tick(rt);                             /* 8271 and keyboard run in real time */
 }
 static void machine_reset(int boot){
     via_reset(&via1); via_reset(&via2); fdc_reset(); sid_reset();
