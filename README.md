@@ -103,6 +103,10 @@ Disks are `.ssd` images (single sided, 10 sectors of 256 bytes per track, 40 or 
 - New: Machine > Start BASIC; settings are remembered in `system5.ini`
 - `DOS_Utilities.ssd` included
 
+### Version 1.2.0
+- New: CPU speed option 1 MHz / 2 MHz for the standard System 5 (Machine > Standard System 5 options); the choice is remembered in `system5.ini`
+
+
 
 ## Building from source
 
