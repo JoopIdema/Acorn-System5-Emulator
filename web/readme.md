@@ -1,2 +1,2 @@
 # WEB Based version
-Download the index.hmtl and open it in your browser.
+Download the index.html and open it in your browser.
